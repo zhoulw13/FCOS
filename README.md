@@ -18,6 +18,9 @@ The full paper is available at: [https://arxiv.org/abs/1904.01355](https://arxiv
 It achieves **41.5%** (ResNet-101-FPN) and **43.2%** (ResNeXt-64x4d-101) in AP on coco test-dev.
 
 ## Updates
+### 8 August 2019
+   - FCOS with VoVNet backbones is available at [VoVNet-FCOS](https://github.com/vov-net/VoVNet-FCOS).
+
 ### 23 July 2019
    - A trick of using a small central region of the BBox for training improves AP by nearly 1 point [as shown here](https://github.com/yqyao/FCOS_PLUS).
 
