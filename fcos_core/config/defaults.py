@@ -23,7 +23,8 @@ _C = CN()
 _C.MODEL = CN()
 _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
-_C.MODEL.FCOS_ON = True
+_C.MODEL.FCOS_ON = False
+_C.MODEL.OSIS_ON = False
 _C.MODEL.RETINANET_ON = False
 _C.MODEL.KEYPOINT_ON = False
 _C.MODEL.DEVICE = "cuda"
@@ -277,6 +278,25 @@ _C.MODEL.RESNETS.RES5_DILATION = 1
 _C.MODEL.RESNETS.BACKBONE_OUT_CHANNELS = 256 * 4
 _C.MODEL.RESNETS.RES2_OUT_CHANNELS = 256
 _C.MODEL.RESNETS.STEM_OUT_CHANNELS = 64
+
+# ---------------------------------------------------------------------------- #
+# OSIS Options
+# ---------------------------------------------------------------------------- #
+_C.MODEL.OSIS = CN()
+_C.MODEL.OSIS.NUM_CLASSES = 81  # the number of classes including background
+_C.MODEL.OSIS.FPN_STRIDES = [8, 16, 32, 64, 128]
+_C.MODEL.OSIS.PRIOR_PROB = 0.01
+_C.MODEL.OSIS.INFERENCE_TH = 0.05
+_C.MODEL.OSIS.NMS_TH = 0.6
+_C.MODEL.OSIS.PRE_NMS_TOP_N = 1000
+
+# Focal loss parameter: alpha
+_C.MODEL.OSIS.LOSS_ALPHA = 0.25
+# Focal loss parameter: gamma
+_C.MODEL.OSIS.LOSS_GAMMA = 2.0
+
+# the number of convolutions used in the semantic and instance tower
+_C.MODEL.OSIS.NUM_CONVS = 4
 
 # ---------------------------------------------------------------------------- #
 # FCOS Options
