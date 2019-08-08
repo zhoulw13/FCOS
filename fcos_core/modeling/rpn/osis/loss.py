@@ -1,8 +1,8 @@
 import torch
 
-class OASISLossComputation():
+class OSISLossComputation():
     """
-        This class computes the OASIS semantic and instance loss.
+        This class computes the OSIS semantic and instance loss.
     """
 
     def __init__(self):

@@ -60,6 +60,21 @@ class Resize(object):
         target = target.resize(image.size)
         return image, target
 
+class SquareResize(object):
+    def __init__(self, max_size):
+        self.max_size = max_size
+
+    # modified from torchvision to add support for max size
+    def get_size(self, image_size):
+        return (self.max_size, self.max_size)
+
+    def __call__(self, image, target):
+        size = self.get_size(image.size)
+        image = F.resize(image, size)
+        target = target.resize(image.size)
+        return image, target
+
+
 
 class RandomHorizontalFlip(object):
     def __init__(self, prob=0.5):
