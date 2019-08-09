@@ -59,8 +59,8 @@ _C.INPUT.PIXEL_STD = [1., 1., 1.]
 # Convert image to BGR format (for Caffe2 models), in range 0-255
 _C.INPUT.TO_BGR255 = True
 
-# Convert image to square shape
-_C.INPUT.SQUARE_RESIZE = False
+# Convert image to fixed shape
+_C.INPUT.FIXED_RESIZE = False
 
 
 # -----------------------------------------------------------------------------

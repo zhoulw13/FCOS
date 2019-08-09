@@ -27,7 +27,7 @@ def build_transforms(cfg, is_train=True):
 
     transform = T.Compose(
         [
-            T.Resize(min_size, max_size) if not cfg.INPUT.SQUARE_RESIZE else T.SquareResize(max_size),
+            T.Resize(min_size, max_size) if not cfg.INPUT.FIXED_RESIZE else T.FixedResize(min_size, max_size),
             T.RandomHorizontalFlip(flip_prob),
             T.ToTensor(),
             normalize_transform,

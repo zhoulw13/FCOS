@@ -60,13 +60,19 @@ class Resize(object):
         target = target.resize(image.size)
         return image, target
 
-class SquareResize(object):
-    def __init__(self, max_size):
+class FixedResize(object):
+    def __init__(self, min_size, max_size):
+        self.min_size = min_size
         self.max_size = max_size
 
     # modified from torchvision to add support for max size
     def get_size(self, image_size):
-        return (self.max_size, self.max_size)
+        w, h = image_size
+        size = self.min_size[0]
+        if w < h:
+            return (self.max_size, size)
+        else:
+            return (size, self.max_size)
 
     def __call__(self, image, target):
         size = self.get_size(image.size)
