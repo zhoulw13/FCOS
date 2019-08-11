@@ -3,6 +3,8 @@ MODEL:
   WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
   RPN_ONLY: True
   OSIS_ON: True
+  OSIS:
+    NUM_INSTANCES: [100, 49, 25, 16, 9]
   BACKBONE:
     CONV_BODY: "R-50-FPN-RETINANET"
   RESNETS:

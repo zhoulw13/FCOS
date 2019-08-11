@@ -3,8 +3,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-#from .inference import make_OSIS_postprocessor
-#from .loss import make_OSIS_loss_evaluator
+#from .inference import make_osis_postprocessor
+from .loss import make_osis_loss_evaluator
 
 #from maskrcnn_benchmark.layers import Scale
 
@@ -50,18 +50,23 @@ class OSISHead(torch.nn.Module):
             in_channels, num_classes, kernel_size=3, stride=1,
             padding=1
         )
-        self.instance_pred = nn.Conv2d(
-            in_channels, 4, kernel_size=3, stride=1,
-            padding=1
-        )
+        self.instance_pred = nn.ModuleList(
+            [nn.Conv2d(in_channels, instance_channels, kernel_size=3, stride=1, padding=1) 
+            for instance_channels in cfg.MODEL.OSIS.NUM_INSTANCES])
 
         # initialization
         for modules in [self.semantic_tower, self.instance_tower,
-                        self.semantic_logits, self.instance_pred]:
+                        self.semantic_logits]:
             for l in modules.modules():
                 if isinstance(l, nn.Conv2d):
                     torch.nn.init.normal_(l.weight, std=0.01)
-                    torch.nn.init.constant_(l.bias, 0)
+                    torch.nn.init.constant_(l.bias, 0)  
+
+        for modules in self.instance_pred:
+            for l in modules.modules():
+                if isinstance(l, nn.Conv2d):
+                    torch.nn.init.normal_(l.weight, std=0.01)
+                    torch.nn.init.constant_(l.bias, 0)  
 
         # initialize the bias for focal loss
         #prior_prob = cfg.MODEL.OSIS.PRIOR_PROB
@@ -76,7 +81,7 @@ class OSISHead(torch.nn.Module):
         for l, feature in enumerate(x):
             semantic_tower = self.semantic_tower(feature)
             semantics.append(self.semantic_logits(semantic_tower))
-            instances.append(self.instance_pred(self.instance_tower(feature)))
+            instances.append(self.instance_pred[l](self.instance_tower(feature)))
         return semantics, instances
 
 class OSISModule(torch.nn.Module):
@@ -90,12 +95,12 @@ class OSISModule(torch.nn.Module):
 
         head = OSISHead(cfg, in_channels)
 
-        #box_selector_test = make_OSIS_postprocessor(cfg)
+        #box_selector_test = make_osis_postprocessor(cfg)
 
-        #loss_evaluator = make_OSIS_loss_evaluator(cfg)
+        loss_evaluator = make_osis_loss_evaluator(cfg)
         self.head = head
         #self.box_selector_test = box_selector_test
-        #self.loss_evaluator = loss_evaluator
+        self.loss_evaluator = loss_evaluator
         self.fpn_strides = cfg.MODEL.OSIS.FPN_STRIDES
 
     def forward(self, images, features, targets=None):
@@ -114,8 +119,7 @@ class OSISModule(torch.nn.Module):
                 testing, it is an empty dict.
         """
         semantics, instances = self.head(features)
-        import pdb
-        pdb.set_trace()
+        self.loss_evaluator(semantics, instances, targets)
         print(len(semantics), semantics[0].shape, instances[0].shape, len(targets), targets[0].shape)
 
         return semantics, {'se_loss': torch.tensor(0)}

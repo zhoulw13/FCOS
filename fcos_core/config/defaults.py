@@ -287,6 +287,7 @@ _C.MODEL.RESNETS.STEM_OUT_CHANNELS = 64
 # ---------------------------------------------------------------------------- #
 _C.MODEL.OSIS = CN()
 _C.MODEL.OSIS.NUM_CLASSES = 81  # the number of classes including background
+_C.MODEL.OSIS.NUM_INSTANCES = [100, 49, 25, 16, 9] # the number of output instance channels for each fpn level, each channel represents a instance
 _C.MODEL.OSIS.FPN_STRIDES = [8, 16, 32, 64, 128]
 _C.MODEL.OSIS.PRIOR_PROB = 0.01
 _C.MODEL.OSIS.INFERENCE_TH = 0.05

@@ -137,6 +137,8 @@ class FCOSLossComputation(object):
             reg_loss (Tensor)
             centerness_loss (Tensor)
         """
+        import pdb
+        pdb.set_trace()
         N = box_cls[0].size(0)
         num_classes = box_cls[0].size(1)
         labels, reg_targets = self.prepare_targets(locations, targets)
