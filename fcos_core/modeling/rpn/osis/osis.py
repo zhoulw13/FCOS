@@ -119,37 +119,22 @@ class OSISModule(torch.nn.Module):
                 testing, it is an empty dict.
         """
         semantics, instances = self.head(features)
-        self.loss_evaluator(semantics, instances, targets)
-        print(len(semantics), semantics[0].shape, instances[0].shape, len(targets), targets[0].shape)
-
-        return semantics, {'se_loss': torch.tensor(0)}
-
-        '''
-        locations = self.compute_locations(features)
  
-        if self.training:
+        if True:
             return self._forward_train(
-                locations, box_cls, 
-                box_regression, 
-                centerness, targets
-            )
-        else:
-            return self._forward_test(
-                locations, box_cls, box_regression, 
-                centerness, images.image_sizes
+                semantics, instances, targets 
             )
 
-    def _forward_train(self, locations, box_cls, box_regression, centerness, targets):
-        loss_box_cls, loss_box_reg, loss_centerness = self.loss_evaluator(
-            locations, box_cls, box_regression, centerness, targets
-        )
+
+    def _forward_train(self, semantics, instances, targets):
+        loss_semantics, loss_instances = self.loss_evaluator(semantics, instances, targets)
         losses = {
-            "loss_cls": loss_box_cls,
-            "loss_reg": loss_box_reg,
-            "loss_centerness": loss_centerness
+            "loss_seg": loss_semantics,
+            "loss_ins": loss_instances,
         }
         return None, losses
 
+    '''
     def _forward_test(self, locations, box_cls, box_regression, centerness, image_sizes):
         boxes = self.box_selector_test(
             locations, box_cls, box_regression, 
