@@ -137,8 +137,6 @@ class FCOSLossComputation(object):
             reg_loss (Tensor)
             centerness_loss (Tensor)
         """
-        import pdb
-        pdb.set_trace()
         N = box_cls[0].size(0)
         num_classes = box_cls[0].size(1)
         labels, reg_targets = self.prepare_targets(locations, targets)
@@ -170,6 +168,9 @@ class FCOSLossComputation(object):
         box_regression_flatten = box_regression_flatten[pos_inds]
         reg_targets_flatten = reg_targets_flatten[pos_inds]
         centerness_flatten = centerness_flatten[pos_inds]
+
+        import pdb
+        pdb.set_trace()
 
         if pos_inds.numel() > 0:
             centerness_targets = self.compute_centerness_targets(reg_targets_flatten)
