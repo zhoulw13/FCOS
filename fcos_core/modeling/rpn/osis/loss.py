@@ -81,7 +81,7 @@ class OSISLossComputation():
         for i in range(len(masks)):
             instance_map = (masks[i] > 0.5).type(torch.uint8) * (i+1) + instance_map * (1 - (masks[i] > 0.5).type(torch.uint8))
 
-        assert instance_map.max() < self.num_classes
+        #assert instance_map.max() < self.num_classes
         return instance_map
 
 

@@ -27,5 +27,5 @@ SOLVER:
   WEIGHT_DECAY: 0.0001
   STEPS: (60000, 80000)
   MAX_ITER: 90000
-  IMS_PER_BATCH: 8 #8 ims_per_gpu
+  IMS_PER_BATCH: 16 #8 ims_per_gpu
   WARMUP_METHOD: "constant"
