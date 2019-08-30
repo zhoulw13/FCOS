@@ -35,6 +35,7 @@ class MaskPostProcessor(nn.Module):
             results (list[BoxList]): one BoxList for each image, containing
                 the extra field mask
         """
+
         mask_prob = x.sigmoid()
 
         # select masks coresponding to the predicted classes

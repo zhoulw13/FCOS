@@ -3,11 +3,12 @@ import torch
 from ..inference import RPNPostProcessor
 from ..utils import permute_and_flatten
 
+from fcos_core.layers.misc import interpolate
 from fcos_core.modeling.box_coder import BoxCoder
 from fcos_core.modeling.utils import cat
 from fcos_core.structures.bounding_box import BoxList
 from fcos_core.structures.boxlist_ops import cat_boxlist
-from fcos_core.structures.boxlist_ops import boxlist_nms
+from fcos_core.structures.boxlist_ops import boxlist_nms_with_keep
 from fcos_core.structures.boxlist_ops import remove_small_boxes
 
 
@@ -46,7 +47,7 @@ class FCOSMaskPostProcessor(torch.nn.Module):
     def forward_for_single_feature_map(
             self, locations, box_cls,
             box_regression, centerness,
-            image_sizes):
+            box_mask, image_sizes):
         """
         Arguments:
             anchors: list[BoxList]
@@ -62,6 +63,7 @@ class FCOSMaskPostProcessor(torch.nn.Module):
         box_regression = box_regression.reshape(N, -1, 4)
         centerness = centerness.view(N, 1, H, W).permute(0, 2, 3, 1)
         centerness = centerness.reshape(N, -1).sigmoid()
+        box_mask = box_mask.view(N, 1, H, W).sigmoid()
 
         candidate_inds = box_cls > self.pre_nms_thresh
         pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
@@ -104,11 +106,24 @@ class FCOSMaskPostProcessor(torch.nn.Module):
             boxlist = BoxList(detections, (int(w), int(h)), mode="xyxy")
             boxlist.add_field("labels", per_class)
             boxlist.add_field("scores", torch.sqrt(per_box_cls))
+
+            prob = self.crop_mask(box_mask[i:i+1], boxlist.bbox, h, w)
+            boxlist.add_field("mask", prob)
+
             boxlist = boxlist.clip_to_image(remove_empty=False)
             boxlist = remove_small_boxes(boxlist, self.min_size)
             results.append(boxlist)
 
         return results
+
+    def crop_mask(self, mask, boxes, h, w):
+        mask = interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
+        prob = torch.zeros((len(boxes), 1, 28, 28), device=boxes.device, dtype=mask.dtype)
+        for i, box in enumerate(boxes):
+            x1, y1, x2, y2 = box.int()
+            prob[i,0] = interpolate(mask[:,:,x1:x2,y1:y2], size=(28,28), mode='bilinear', align_corners=False)[0,0]
+        return prob
+        
 
     def forward(self, locations, box_cls, box_regression, centerness, box_mask, image_sizes):
         """
@@ -123,10 +138,10 @@ class FCOSMaskPostProcessor(torch.nn.Module):
                 applying box decoding and NMS
         """
         sampled_boxes = []
-        for _, (l, o, b, c) in enumerate(zip(locations, box_cls, box_regression, centerness)):
+        for _, (l, o, b, c, m) in enumerate(zip(locations, box_cls, box_regression, centerness, box_mask)):
             sampled_boxes.append(
                 self.forward_for_single_feature_map(
-                    l, o, b, c, image_sizes
+                    l, o, b, c, m, image_sizes
                 )
             )
 
@@ -146,9 +161,11 @@ class FCOSMaskPostProcessor(torch.nn.Module):
         for i in range(num_images):
             scores = boxlists[i].get_field("scores")
             labels = boxlists[i].get_field("labels")
+            masks = boxlists[i].get_field("mask")
             boxes = boxlists[i].bbox
             boxlist = boxlists[i]
             result = []
+
             # skip the background
             for j in range(1, self.num_classes):
                 inds = (labels == j).nonzero().view(-1)
@@ -157,15 +174,19 @@ class FCOSMaskPostProcessor(torch.nn.Module):
                 boxes_j = boxes[inds, :].view(-1, 4)
                 boxlist_for_class = BoxList(boxes_j, boxlist.size, mode="xyxy")
                 boxlist_for_class.add_field("scores", scores_j)
-                boxlist_for_class = boxlist_nms(
+                boxlist_for_class, keep = boxlist_nms_with_keep(
                     boxlist_for_class, self.nms_thresh,
                     score_field="scores"
                 )
                 num_labels = len(boxlist_for_class)
+                
                 boxlist_for_class.add_field(
                     "labels", torch.full((num_labels,), j,
                                          dtype=torch.int64,
                                          device=scores.device)
+                )
+                boxlist_for_class.add_field(
+                    "mask", masks[inds[keep], :, :, :]
                 )
                 result.append(boxlist_for_class)
 

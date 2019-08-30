@@ -43,6 +43,10 @@ class GeneralizedRCNN(nn.Module):
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
 
         """
+
+        #from boxx import show
+        #show(images.tensors.permute(0,2,3,1).int().cpu().numpy()[:,:,:,::-1]+127, figsize=(10,10))
+
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
         images = to_image_list(images)

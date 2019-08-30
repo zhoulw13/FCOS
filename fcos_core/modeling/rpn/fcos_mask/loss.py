@@ -130,9 +130,9 @@ class FCOSMaskLossComputation(object):
             labels_per_im = labels_per_im[locations_to_gt_inds]
             labels_per_im[locations_to_min_area == INF] = 0
 
-            masks = masks[locations_to_gt_inds]
+            masks = masks[range(len(locations)), locations_to_gt_inds]
             masks[locations_to_min_area == INF] = 0
-            masks = (masks.sum(dim=1) > 0).float()
+            #masks = (masks.sum(dim=1) > 0).float()
 
             labels.append(labels_per_im)
             reg_targets.append(reg_targets_per_im)
@@ -204,6 +204,8 @@ class FCOSMaskLossComputation(object):
         box_regression_flatten = box_regression_flatten[pos_inds]
         reg_targets_flatten = reg_targets_flatten[pos_inds]
         centerness_flatten = centerness_flatten[pos_inds]
+        box_mask_flatten = box_mask_flatten[pos_inds]
+        mask_targets_flatten = mask_targets_flatten[pos_inds]
 
         if pos_inds.numel() > 0:
             centerness_targets = self.compute_centerness_targets(reg_targets_flatten)
@@ -216,11 +218,15 @@ class FCOSMaskLossComputation(object):
                 centerness_flatten,
                 centerness_targets
             )
+            mask_loss = self.box_mask_loss_func(
+                box_mask_flatten, 
+                mask_targets_flatten
+            )
         else:
             reg_loss = box_regression_flatten.sum()
             centerness_loss = centerness_flatten.sum()
+            mask_loss = box_mask_flatten.sum()
         
-        mask_loss = self.box_mask_loss_func(box_mask_flatten, mask_targets_flatten)
 
         return cls_loss, reg_loss, centerness_loss, mask_loss
 

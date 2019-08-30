@@ -184,6 +184,25 @@ class COCODemo(object):
 
         return result
 
+    def my_run(self, image):
+        predictions = self.my_prediction(image)
+
+        return predictions
+
+    def my_prediction(self, original_image):
+        # apply pre-processing to image
+        image = self.transforms(original_image)
+        # convert to an ImageList, padded so that it is divisible by
+        # cfg.DATALOADER.SIZE_DIVISIBILITY
+        image_list = to_image_list(image, self.cfg.DATALOADER.SIZE_DIVISIBILITY)
+        image_list = image_list.to(self.device)
+        # compute predictions
+        with torch.no_grad():
+            predictions = self.model(image_list)
+        predictions = [[o.to(self.cpu_device) for o in O]for O in predictions]
+
+        return predictions
+
     def compute_prediction(self, original_image):
         """
         Arguments:

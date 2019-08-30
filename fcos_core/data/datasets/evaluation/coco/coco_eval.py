@@ -118,6 +118,7 @@ def prepare_for_coco_segmentation(predictions, dataset):
         image_height = img_info["height"]
         prediction = prediction.resize((image_width, image_height))
         masks = prediction.get_field("mask")
+
         # t = time.time()
         # Masker is necessary only if masks haven't been already resized.
         if list(masks.shape[-2:]) != [image_height, image_width]:
@@ -125,6 +126,9 @@ def prepare_for_coco_segmentation(predictions, dataset):
             masks = masks[0]
         # logger.info('Time mask: {}'.format(time.time() - t))
         # prediction = prediction.convert('xywh')
+
+        #import pdb
+        #pdb.set_trace()
 
         # boxes = prediction.bbox.tolist()
         scores = prediction.get_field("scores").tolist()

@@ -176,7 +176,7 @@ class FCOSMaskModule(torch.nn.Module):
             locations, box_cls, box_regression, 
             centerness, box_mask, image_sizes
         )
-        return boxes, {}
+        return boxes, box_mask#{}
 
     def compute_locations(self, features):
         locations = []

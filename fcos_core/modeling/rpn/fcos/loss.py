@@ -169,9 +169,6 @@ class FCOSLossComputation(object):
         reg_targets_flatten = reg_targets_flatten[pos_inds]
         centerness_flatten = centerness_flatten[pos_inds]
 
-        import pdb
-        pdb.set_trace()
-
         if pos_inds.numel() > 0:
             centerness_targets = self.compute_centerness_targets(reg_targets_flatten)
             reg_loss = self.box_reg_loss_func(
