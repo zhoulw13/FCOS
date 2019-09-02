@@ -119,11 +119,16 @@ class OSISModule(torch.nn.Module):
                 testing, it is an empty dict.
         """
         semantics, instances = self.head(features)
+
+        from boxx import show
+        show(images.tensors.permute(0,2,3,1)[0].int().cpu().numpy()[:,:,::-1], figsize=(10, 10))
  
-        if True:
+        if self.training:
             return self._forward_train(
                 semantics, instances, targets 
             )
+        else:
+            return semantics, instances
 
 
     def _forward_train(self, semantics, instances, targets):

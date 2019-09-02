@@ -5,6 +5,8 @@ from torch import nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+from boxx import g
+
 class OSISLossComputation():
     """
         This class computes the OSIS semantic and instance loss.
@@ -48,7 +50,8 @@ class OSISLossComputation():
 
         assert semantics_targets.max() <= 1
 
-        return semantics_targets.reshape(-1).float()
+        return semantics_targets.float()
+        #return semantics_targets.reshape(-1).float()
 
     def prepare_instance_target(self, targets, feature_size, fpn_level_idx):
         device = targets[0].bbox.device
@@ -72,7 +75,8 @@ class OSISLossComputation():
                 if instance_map[row, col] != 0:
                     instances_targets[i, j] = resized_masks[int(instance_map[row, col]-1)]
 
-        return instances_targets.reshape(-1).float()
+        return instances_targets.float()
+        #return instances_targets.reshape(-1).float()
            
 
     def compute_single_instancemap(self, masks, feature_size, device):
@@ -102,6 +106,9 @@ class OSISLossComputation():
             feature_size.append((semantics[l].size()[-2:]))
 
         semantics_targets, instances_targets = self.prepare_targets(targets, feature_size)
+
+        from IPython.core.debugger import set_trace
+        set_trace()
 
         semantics_flatten = []
         instances_flatten = []
