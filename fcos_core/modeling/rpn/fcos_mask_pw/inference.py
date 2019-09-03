@@ -12,7 +12,7 @@ from fcos_core.structures.boxlist_ops import boxlist_nms_with_keep
 from fcos_core.structures.boxlist_ops import remove_small_boxes
 
 
-class FCOSMaskPostProcessor(torch.nn.Module):
+class FCOSMaskPWPostProcessor(torch.nn.Module):
     """
     Performs post-processing on the outputs of the RetinaNet boxes.
     This is only used in the testing.
@@ -36,7 +36,7 @@ class FCOSMaskPostProcessor(torch.nn.Module):
             num_classes (int)
             box_coder (BoxCoder)
         """
-        super(FCOSMaskPostProcessor, self).__init__()
+        super(FCOSMaskPWPostProcessor, self).__init__()
         self.pre_nms_thresh = pre_nms_thresh
         self.pre_nms_top_n = pre_nms_top_n
         self.nms_thresh = nms_thresh
@@ -210,13 +210,13 @@ class FCOSMaskPostProcessor(torch.nn.Module):
         return results
 
 
-def make_fcos_mask_postprocessor(config):
+def make_fcos_mask_pw_postprocessor(config):
     pre_nms_thresh = config.MODEL.FCOS.INFERENCE_TH
     pre_nms_top_n = config.MODEL.FCOS.PRE_NMS_TOP_N
     nms_thresh = config.MODEL.FCOS.NMS_TH
     fpn_post_nms_top_n = config.TEST.DETECTIONS_PER_IMG
 
-    box_selector = FCOSMaskPostProcessor(
+    box_selector = FCOSMaskPWPostProcessor(
         pre_nms_thresh=pre_nms_thresh,
         pre_nms_top_n=pre_nms_top_n,
         nms_thresh=nms_thresh,

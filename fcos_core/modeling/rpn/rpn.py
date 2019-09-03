@@ -8,6 +8,7 @@ from fcos_core.modeling.box_coder import BoxCoder
 from fcos_core.modeling.rpn.retinanet.retinanet import build_retinanet
 from fcos_core.modeling.rpn.fcos.fcos import build_fcos
 from fcos_core.modeling.rpn.fcos_mask.fcos_mask import build_fcos_mask
+from fcos_core.modeling.rpn.fcos_mask_pw.fcos_mask_pw import build_fcos_mask_pw
 from fcos_core.modeling.rpn.osis.osis import build_osis
 from .loss import make_rpn_loss_evaluator
 from .anchor_generator import make_anchor_generator
@@ -204,6 +205,8 @@ def build_rpn(cfg, in_channels):
     """
     This gives the gist of it. Not super important because it doesn't change as much
     """
+    if cfg.MODEL.FCOS_MASK_PW_ON:
+        return build_fcos_mask_pw(cfg, in_channels)
     if cfg.MODEL.FCOS_MASK_ON:
         return build_fcos_mask(cfg, in_channels)
     if cfg.MODEL.OSIS_ON:

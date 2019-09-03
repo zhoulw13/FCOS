@@ -25,6 +25,7 @@ _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.FCOS_ON = False
 _C.MODEL.FCOS_MASK_ON = False
+_C.MODEL.FCOS_MASK_PW_ON = False #FCOS MASK PIXELWISE
 _C.MODEL.OSIS_ON = False
 _C.MODEL.RETINANET_ON = False
 _C.MODEL.KEYPOINT_ON = False
@@ -321,6 +322,9 @@ _C.MODEL.FCOS.LOSS_GAMMA = 2.0
 
 # the number of convolutions used in the cls and bbox tower
 _C.MODEL.FCOS.NUM_CONVS = 4
+
+# mask channels (fcos mask pixelwise option)
+_C.MODEL.FCOS.MASK_PW_CHANNELS = 196
 
 # ---------------------------------------------------------------------------- #
 # RetinaNet Options (Follow the Detectron version)
