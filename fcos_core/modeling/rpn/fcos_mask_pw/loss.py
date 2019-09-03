@@ -66,6 +66,7 @@ class FCOSMaskPWLossComputation(object):
         for i in range(len(labels)):
             labels[i] = torch.split(labels[i], num_points_per_level, dim=0)
             reg_targets[i] = torch.split(reg_targets[i], num_points_per_level, dim=0)
+            mask_targets[i] = torch.split(mask_targets[i], num_points_per_level, dim=0)
 
         labels_level_first = []
         reg_targets_level_first = []
@@ -78,7 +79,7 @@ class FCOSMaskPWLossComputation(object):
                 torch.cat([reg_targets_per_im[level] for reg_targets_per_im in reg_targets], dim=0)
             )
             mask_targets_level_first.append(
-                torch.cat([mask_targets_per_im[level].unsqueeze(0) for mask_targets_per_im in mask_targets], dim=0)
+                torch.cat([mask_targets_per_im[level] for mask_targets_per_im in mask_targets], dim=0)
             )
 
         return labels_level_first, reg_targets_level_first, mask_targets_level_first
@@ -106,7 +107,8 @@ class FCOSMaskPWLossComputation(object):
             for size in feature_size:
                 with torch.no_grad():
                     resized_masks_per_im = interpolate(instance_mask.unsqueeze(0).float(), size=size, mode='bilinear', align_corners=False)#F.adaptive_avg_pool2d(Variable(instance_mask.float()), size).data
-                masks.append(instances[resized_masks_per_im.squeeze().long()].permute(2, 0, 1).float())
+                masks.append(instances[resized_masks_per_im.squeeze().long()].float().reshape(size[0]*size[1], -1))
+            masks = torch.cat(masks, dim=0)
 
             l = xs[:, None] - bboxes[:, 0][None]
             t = ys[:, None] - bboxes[:, 1][None]
@@ -135,7 +137,7 @@ class FCOSMaskPWLossComputation(object):
             labels_per_im[locations_to_min_area == INF] = 0
 
             #masks = masks[range(len(locations)), locations_to_gt_inds]
-            #masks[locations_to_min_area == INF] = 0
+            masks[locations_to_min_area == INF] = 0
             #masks = (masks.sum(dim=1) > 0).float()
 
             labels.append(labels_per_im)
@@ -206,8 +208,8 @@ class FCOSMaskPWLossComputation(object):
             labels_flatten.append(labels[l].reshape(-1))
             reg_targets_flatten.append(reg_targets[l].reshape(-1, 4))
             centerness_flatten.append(centerness[l].reshape(-1))
-            box_mask_flatten.append(box_mask[l].reshape(-1))
-            mask_targets_flatten.append(mask_targets[l].reshape(-1))
+            box_mask_flatten.append(box_mask[l].reshape(-1, self.box_mask_pw_channels))
+            mask_targets_flatten.append(mask_targets[l].reshape(-1, self.box_mask_pw_channels))
 
         box_cls_flatten = torch.cat(box_cls_flatten, dim=0)
         box_regression_flatten = torch.cat(box_regression_flatten, dim=0)

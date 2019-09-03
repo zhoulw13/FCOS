@@ -66,7 +66,7 @@ def main():
     _ = checkpointer.load(cfg.MODEL.WEIGHT)
 
     iou_types = ("bbox",)
-    if cfg.MODEL.MASK_ON or cfg.MODEL.FCOS_MASK_ON:
+    if cfg.MODEL.MASK_ON or cfg.MODEL.FCOS_MASK_ON or cfg.MODEL.FCOS_MASK_PW_ON:
         iou_types = iou_types + ("segm",)
     if cfg.MODEL.KEYPOINT_ON:
         iou_types = iou_types + ("keypoints",)
@@ -84,7 +84,7 @@ def main():
             data_loader_val,
             dataset_name=dataset_name,
             iou_types=iou_types,
-            box_only=False if cfg.MODEL.FCOS_ON or cfg.MODEL.RETINANET_ON or cfg.MODEL.FCOS_MASK_ON else cfg.MODEL.RPN_ONLY,
+            box_only=False if cfg.MODEL.FCOS_ON or cfg.MODEL.RETINANET_ON or cfg.MODEL.FCOS_MASK_ON or cfg.MODEL.FCOS_MASK_PW_ON else cfg.MODEL.RPN_ONLY,
             device=cfg.MODEL.DEVICE,
             expected_results=cfg.TEST.EXPECTED_RESULTS,
             expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,

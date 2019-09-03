@@ -1,3 +1,4 @@
+import math
 import torch
 
 from ..inference import RPNPostProcessor
@@ -56,6 +57,8 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
         """
         N, C, H, W = box_cls.shape
 
+        M = box_mask.shape[1]
+
         # put in the same format as locations
         box_cls = box_cls.view(N, C, H, W).permute(0, 2, 3, 1)
         box_cls = box_cls.reshape(N, -1, C).sigmoid()
@@ -63,7 +66,7 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
         box_regression = box_regression.reshape(N, -1, 4)
         centerness = centerness.view(N, 1, H, W).permute(0, 2, 3, 1)
         centerness = centerness.reshape(N, -1).sigmoid()
-        box_mask = box_mask.view(N, 1, H, W).sigmoid()
+        box_mask = box_mask.view(N, M, H, W).sigmoid()
 
         candidate_inds = box_cls > self.pre_nms_thresh
         pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
@@ -107,11 +110,8 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
             boxlist.add_field("labels", per_class)
             boxlist.add_field("scores", torch.sqrt(per_box_cls))
 
-            prob = self.crop_mask(box_mask[i:i+1], boxlist.bbox, h, w)
+            prob = self.compute_mask(box_mask[i:i+1], boxlist.bbox, h, w)
             boxlist.add_field("mask", prob)
-
-            #import pdb
-            #pdb.set_trace()
 
             boxlist = boxlist.clip_to_image(remove_empty=False)
             boxlist = remove_small_boxes(boxlist, self.min_size)
@@ -119,13 +119,36 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
 
         return results
 
-    def crop_mask(self, mask, boxes, h, w):
+    def compute_mask(self, mask, boxes, h, w):
         mask = interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
-        prob = torch.zeros((len(boxes), 1, 28, 28), device=boxes.device, dtype=mask.dtype)
+        mask = mask.permute(0, 2, 3, 1)
+        M = int(math.sqrt(mask.shape[-1]))
+        prob = torch.zeros((len(boxes), 1, M, M), device=boxes.device, dtype=mask.dtype)
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.int()
-            prob[i,0] = interpolate(mask[:,:,x1:x2,y1:y2], size=(28,28), mode='bilinear', align_corners=False)[0,0]
+            x1 = int(max(0, x1))
+            x2 = int(min(x2, h-1))
+            y1 = int(max(0, y1))
+            y2 = int(min(y2, w-1))
+            if x1 >= x2 or y1 >= x2:
+                continue
+            #print(mask.shape)
+            #print(x1, x2, y1, y2)
+            loc = self.compute_location(x1, x2, y1, y2, mask.device)
+            #print(loc[:,0].min(), loc[:,0].max(), loc[:,1].min(), loc[:,1].max())
+            #print()
+            prob[i, 0] = mask[:, loc[:,0], loc[:,1], :].mean(dim=1).reshape(M, M)
         return prob
+
+    def compute_location(self, x1, x2, y1, y2, device):
+        shifts_x = torch.arange(x1, x2, dtype=torch.int64, device=device)
+        shifts_y = torch.arange(y1, y2, dtype=torch.int64, device=device)
+
+        shift_x, shift_y = torch.meshgrid(shifts_x, shifts_y)
+        shift_x = shift_x.reshape(-1)
+        shift_y = shift_y.reshape(-1)
+
+        return torch.stack((shift_x, shift_y), dim=1)
         
 
     def forward(self, locations, box_cls, box_regression, centerness, box_mask, image_sizes):
