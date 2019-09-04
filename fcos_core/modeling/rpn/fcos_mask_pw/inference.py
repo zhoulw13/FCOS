@@ -130,14 +130,16 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
             x2 = int(min(x2, h-1))
             y1 = int(max(0, y1))
             y2 = int(min(y2, w-1))
-            if x1 >= x2 or y1 >= x2:
+            if x1 >= x2 or y1 >= y2:
                 continue
             #print(mask.shape)
             #print(x1, x2, y1, y2)
-            loc = self.compute_location(x1, x2, y1, y2, mask.device)
+            
+            #loc = self.compute_location(x1, x2, y1, y2, mask.device)
             #print(loc[:,0].min(), loc[:,0].max(), loc[:,1].min(), loc[:,1].max())
             #print()
-            prob[i, 0] = mask[:, loc[:,0], loc[:,1], :].mean(dim=1).reshape(M, M)
+            #prob[i, 0] = mask[:, loc[:,0], loc[:,1], :].mean(dim=1).reshape(M, M)
+            prob[i, 0] = mask[:, (x1+x2)//2, (y1+y2)//2, :].reshape(M, M)
         return prob
 
     def compute_location(self, x1, x2, y1, y2, device):

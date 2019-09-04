@@ -22,7 +22,7 @@ def main():
     )
     parser.add_argument(
         "--weights",
-        default="models/fcos_mask_pw_test/model_0080000.pth",
+        default="models/fcos_mask_pw_test2/model_0070000.pth",
         metavar="FILE",
         help="path to the trained model",
     )
