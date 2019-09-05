@@ -66,7 +66,7 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
         box_regression = box_regression.reshape(N, -1, 4)
         centerness = centerness.view(N, 1, H, W).permute(0, 2, 3, 1)
         centerness = centerness.reshape(N, -1).sigmoid()
-        box_mask = box_mask.view(N, M, H, W).sigmoid()
+        box_mask = box_mask.view(N, M, H, W).sigmoid().reshape(N, M, -1).permute(0, 2, 1)
 
         candidate_inds = box_cls > self.pre_nms_thresh
         pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
@@ -91,12 +91,14 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
 
             per_pre_nms_top_n = pre_nms_top_n[i]
 
+
             if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
                 per_box_cls, top_k_indices = \
                     per_box_cls.topk(per_pre_nms_top_n, sorted=False)
                 per_class = per_class[top_k_indices]
                 per_box_regression = per_box_regression[top_k_indices]
                 per_locations = per_locations[top_k_indices]
+                per_box_loc = per_box_loc[top_k_indices]
 
             detections = torch.stack([
                 per_locations[:, 0] - per_box_regression[:, 0],
@@ -110,7 +112,9 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
             boxlist.add_field("labels", per_class)
             boxlist.add_field("scores", torch.sqrt(per_box_cls))
 
-            prob = self.compute_mask(box_mask[i:i+1], boxlist.bbox, h, w)
+            #prob = self.compute_mask(box_mask[i:i+1], per_box_loc, h, w)
+            length = int(math.sqrt(box_mask.shape[-1]))
+            prob = box_mask[i, per_box_loc].reshape(len(per_box_loc), length, length).unsqueeze(1)
             boxlist.add_field("mask", prob)
 
             boxlist = boxlist.clip_to_image(remove_empty=False)
@@ -118,6 +122,7 @@ class FCOSMaskPWPostProcessor(torch.nn.Module):
             results.append(boxlist)
 
         return results
+
 
     def compute_mask(self, mask, boxes, h, w):
         mask = interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
